@@ -30,7 +30,7 @@ def extract_p_number(file):
     """
     Extract the number after "P" in a file name
     """
-    match = re.search(r"(\d+)", file)
+    match = re.search(r"P(\d+)", file)
     if match:
         return int(match.group(1))
     return -1
@@ -278,18 +278,21 @@ print(f"We're keeping files {valid_indices}")
 selected_files = [files[i] for i in valid_indices]
 
 # Finally, valid_time_indices
+print("First Filter: Window Times...\n")
 valid_time_indices = remove_bad_window_time(selected_files)
 
 # First filter of event_numbers and window_times
 event_numbers, window_times = filter_and_merge_windows(selected_files, valid_time_indices)
+print("Window Time Filter Applied!")
 
 # CARD_ID CUT
 # Second valid_indices, those for the card_id filter
+print("Second Filter: card_id...\n")
 valid_card_id_indices = remove_bad_card_ids(selected_files, event_numbers)
 
 # Second and final filter for event_numbers and window_times, also get the rest of the variables already filtered
 final_event_numbers, final_window_times, final_hit_mpmt_card_id, final_hit_pmt_channel, final_hit_pmt_times = read_and_filter(selected_files, valid_card_id_indices)
-
+print("card_id Filter Applied!")
 
 # %%
 # Plot before and after filtering for comparision

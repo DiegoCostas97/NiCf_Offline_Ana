@@ -1,4 +1,5 @@
-# Some Imports
+# %%
+# # Some Imports
 import uproot 
 import matplotlib
 import collections
@@ -23,50 +24,23 @@ font = {'size'   : 16}
 matplotlib.rc('font', **font)
 plt.rcParams["legend.markerscale"] = 3
 
+# %%
 # Function to extract the number after "P" in the file names
 def extract_p_number(file):
-    match = re.search(r"P(\d+)", file)
+    """
+    Extract the number after "P" in a file name
+    """
+    match = re.search(r"(\d+)", file)
     if match:
         return int(match.group(1))
     return -1
 
-# Select the run number and file
-run = 514
-run_duration = 1920 # Run duration in seconds
-files = glob.glob(f"/eos/experiment/wcte/data/readout_commissioning/offline/dataR{run}S*P*.root")
-
-# Sort the files using extract_p_number
-files = sorted(files, key=extract_p_number)
-print(f"Run {run} has {len(files)} files")
-
-"""
-Window Filtering
-First, we're just keeping the "parts" of the run (those files in which the run is split) that have at least 1 000 events (windows).
-Second, we're selecting the windows that are separated less or equal tha 20 times the nominal 524 288 ns separation.
-"""
-
-tree = uproot.open(files[0]+":WCTEReadoutWindows")
-
-event_numbers = [tree['event_number'].array().to_numpy()]
-window_times  = [tree['window_time'].array().to_numpy()]
-
-for f in tqdm(files[1:], desc="Reading all parts"):
-    tree2 = uproot.open(f+":WCTEReadoutWindows")
-    event_numbers.append(tree2['event_number'].array().to_numpy()+event_numbers[-1].max()+1)
-    window_times.append(tree2['window_time'].array().to_numpy()) 
-
-# Plot Unfiltered Data
-# for e,t in zip(event_numbers, window_times):
-#     plt.scatter(e, t/1e9, marker='.')
-
-# plt.xlabel("Event Number")
-# plt.ylabel("Window Times [s]")
-# plt.ylim(-50, 3000);
-# plt.hlines(run_duration, 0, np.max(event_numbers[-1]));
-# plt.show()
-
+# %%
 # Remove the parts with less than 1 000 events
 def remove_small_files(events, threshold=1000):
+    """
+    Remove those files with less than threshold events.
+    """
     valid_indices = []
     for i, e in enumerate(events):
         if len(e) > threshold:
@@ -74,12 +48,25 @@ def remove_small_files(events, threshold=1000):
 
     return valid_indices
 
-valid_indices = remove_small_files(event_numbers)
-print(f"We're keeping files {valid_indices}")
+# %%
+def plot_event_times(events, times):
+    for i, (e,t) in enumerate(zip(event_numbers, window_times)):
+        time_in_seconds = [i*1e-9 for i in t]
+        
+        plt.scatter(e, time_in_seconds, marker=".", label=f"Part {i}");
 
-selected_files = [files[i] for i in valid_indices]
+    plt.xlabel("Event Number")
+    plt.ylabel("Window Times [s]")
+    plt.hlines(run_duration, 0, np.max(event_numbers[-1]))
+    plt.text(0, run_duration+0.01*run_duration, "Run Duration [s]")
+    plt.show()
 
+# %%
 """
+Window Filtering
+First, we're just keeping the "parts" of the run (those files in which the run is split) that have at least 1 000 events (windows).
+Second, we're selecting the windows that are separated less or equal tha 20 times the nominal 524 288 ns separation.
+
 Now, visualizing the data I've come to realize that the average window separation is something between 1 and 20 times the nominal
 separation (~50 ms), so again, we're not selecting any event separated more than 20 x 50 ms from its previous window, and this should
 maintain a tendence, this means the algorithm should look for the zone where the points follow a linear tendence, and keep that points,
@@ -88,7 +75,8 @@ removing those in the beggining or in the end that start to differ from the tend
 It is important to notice that the first part alway start diverging after many events, whilst other files start in non-sensical window 
 time values and start to catch the tendence of the points. But there are parts, specially at the end of the run, that show herratic
 behaviours and event data after the run has stopped. This makes the algorithm more complicated and makes it fail, so it needs a
-revision as we need to ensure we are collecting all quality data, and just leaving behind corrupted or non-sensical data."""
+revision as we need to ensure we are collecting all quality data, and just leaving behind corrupted or non-sensical data.
+"""
 
 def remove_times(times, thr):
     """
@@ -119,7 +107,8 @@ def remove_times(times, thr):
 def remove_bad_window_time(files, threshold=20):
     """
     Remove from event_numbers and window_times collections those events and window times that are invalid
-    because they don't match the threshold requirements"""
+    because they don't match the threshold requirements
+    """
     valid_time_indices = []
     
     for f in files:
@@ -143,12 +132,11 @@ def remove_bad_window_time(files, threshold=20):
             
     return valid_time_indices
 
-valid_time_indicess = remove_bad_window_time(selected_files)
-
 def filter_and_merge_windows(files, indices):
     """
     Finally, we will re-read the events and time windows from scratch and use valid_time_indicess to select
-    those events and times that match our requisites."""
+    those events and times that match our requisites.
+    """
     # Read first part file
     tree0  = uproot.open(files[0]+":WCTEReadoutWindows")
     event0 = tree['event_number'].array().to_numpy()
@@ -180,17 +168,131 @@ def filter_and_merge_windows(files, indices):
 
     return event_numbers, window_times
 
-event_numbers, window_times = filter_and_merge_windows(selected_files, valid_time_indicess)
+# %%
+"""
+Next we realized that even the events that we considered good because their window time matched with the real tendence
+could be bad events since they had hit_mpmt_card_ids higher than the actual number of mPMTs (we're talking about card >1000 and 
+things like that). So, we removed those events.
+"""
 
-for i, (e,t) in enumerate(zip(event_numbers, window_times)):
-    time_in_seconds = [i*1e-9 for i in t]
-    
-    plt.scatter(e, time_in_seconds, marker=".", label=f"Part {i}");
-    
-plt.xlabel("Event Number")
-plt.ylabel("Window Start Time [s]")
-plt.hlines(run_duration, 0, np.max(event_numbers[-1]));
-plt.text(0, 1145, "Run Duration [s]");
+def remove_bad_card_ids(files, events):
+    valid_card_id_indices = []
 
-plt.legend(loc="lower right");
-plt.show()
+    for i,f in tqdm(enumerate(files), total=len(files), desc="Processing Files"):
+        tree          = uproot.open(f+":WCTEReadoutWindows")
+        mpmt_card_ids = tree["hit_mpmt_card_ids"].array()
+
+        valid_indices = [
+            window
+            for window in tqdm(range(len(events[i])), desc=f"File {i}", colour='yellow', leave=False)
+            if np.all(np.array(mpmt_card_ids[window]) <= 131)
+        ]
+
+        valid_card_id_indices.append(valid_indices)
+
+    return valid_card_id_indices
+
+def read_and_filter(files, card_id_indices):
+    """
+    Read all variables from the tree that are useful to us and filter with valid_card_id_indices (already filtered with 
+    valid_time_indicess)
+    """
+    final_event_numbers       = []
+    final_window_times        = []
+    final_hit_mpmt_card_id    = []
+    # final_hit_mpmt_slot_ids   = []
+    final_hit_pmt_channel_ids = []
+    # final_hit_pmt_charges     = []
+    final_hit_pmt_times       = []
+
+    for i,f in tqdm(enumerate(files), total=len(files), desc="Processing Files"):
+        # print(f"Processing file {i + 1} / {len(files)}:")
+        current_events      = event_numbers[i]
+        current_times       = window_times[i]
+        tree                = uproot.open(f+":WCTEReadoutWindows")
+        hit_mpmt_card_ids   = tree["hit_mpmt_card_ids"].array()
+        # hit_mpmt_slot_ids   = tree["hit_mpmt_slot_ids"].array()
+        hit_pmt_channel_ids = tree["hit_pmt_channel_ids"].array()
+        # hit_pmt_charges     = tree["hit_pmt_charges"].array()
+        hit_pmt_times       = tree['hit_pmt_times'].array()
+        # print(f"Number of current events: {len(current_events)}")
+        
+        # Transform into set to optimize filtering
+        valid_card_id_indices_set = set(card_id_indices[i])
+        
+        # Filter valid events
+        filtered_events = [current_events[j] for j in range(len(current_events)) if j in card_id_indices]
+        filtered_times  = [current_times[j] for j in range(len(current_times)) if j in card_id_indices]
+        filtered_hit_mpmt_card_ids = [hit_mpmt_card_ids[j] for j in range(len(hit_mpmt_card_ids)) if j in card_id_indices]
+        # filtered_hit_mpmt_slot_ids = [hit_mpmt_slot_ids[j] for j in range(len(hit_mpmt_slot_ids)) if j in card_id_indices]
+        filtered_hit_pmt_channel_ids = [hit_pmt_channel_ids[j] for j in range(len(hit_pmt_channel_ids)) if j in card_id_indices]
+        # filtered_hit_pmt_charges     = [hit_pmt_charges[j] for j in range(len(hit_pmt_charges)) if j in card_id_indices]
+        filtered_hit_pmt_times       = [hit_pmt_times[j] for j in range(len(hit_pmt_times)) if j in card_id_indices]
+        # print(f"Number of valid events: {len(filtered_events)}")
+        # print(f"Number of hit_mpmt entries: {len(filtered_hit_mpmt_card_ids)}\n")
+        
+        # Append to main list
+        final_event_numbers.append(filtered_events)
+        final_window_times.append(filtered_times)
+        final_hit_mpmt_card_id.append(filtered_hit_mpmt_card_ids)   
+        # final_hit_mpmt_slot_ids.append(filtered_hit_mpmt_slot_ids) 
+        final_hit_pmt_channel_ids.append(filtered_hit_pmt_channel_ids) 
+        # final_hit_pmt_charges.append(filtered_hit_pmt_charges)     
+        final_hit_pmt_times.append(filtered_hit_pmt_times)
+
+    if len(files) == len(final_event_numbers) == len(final_window_times):
+        # print("Tests passed")
+        pass
+    else:
+        raise ValueError(f"You're processing {len(files)} files, but your final_event_numbers is {len(final_event_numbers)} items long")
+
+    return final_event_numbers, final_window_times, final_hit_mpmt_card_id, final_hit_pmt_channel_ids, final_hit_pmt_times
+
+#%%
+# Select the run number and file
+run = 514
+run_duration = 1920 # Run duration in seconds
+files = glob.glob(f"/eos/experiment/wcte/data/readout_commissioning/offline/dataR{run}S*P*.root")
+
+# Sort the files using extract_p_number
+files = sorted(files, key=extract_p_number)
+print(f"Run {run} has {len(files)} files")
+
+# Read the original .root files and create the initial event_numbers and window_times
+tree = uproot.open(files[0]+":WCTEReadoutWindows")
+
+primal_event_numbers = [tree['event_number'].array().to_numpy()]
+primal_window_times  = [tree['window_time'].array().to_numpy()]
+
+for f in tqdm(files[1:], desc="Reading all parts"):
+    tree2 = uproot.open(f+":WCTEReadoutWindows")
+    primal_event_numbers.append(tree2['event_number'].array().to_numpy()+primal_event_numbers[-1].max()+1)
+    primal_window_times.append(tree2['window_time'].array().to_numpy()) 
+
+# TIME CUT
+# Then, first valid indices, those for the window filtering
+valid_indices = remove_small_files(primal_event_numbers)
+print(f"We're keeping files {valid_indices}")
+
+# Create the selected_files variable
+selected_files = [files[i] for i in valid_indices]
+
+# Finally, valid_time_indices
+valid_time_indices = remove_bad_window_time(selected_files)
+
+# First filter of event_numbers and window_times
+event_numbers, window_times = filter_and_merge_windows(selected_files, valid_time_indices)
+
+# CARD_ID CUT
+# Second valid_indices, those for the card_id filter
+valid_card_id_indices = remove_bad_card_ids(selected_files, event_numbers)
+
+# Second and final filter for event_numbers and window_times, also get the rest of the variables already filtered
+final_event_numbers, final_window_times, final_hit_mpmt_card_id, final_hit_pmt_channel, final_hit_pmt_times = read_and_filter(selected_files, valid_card_id_indices)
+
+
+# %%
+# Plot before and after filtering for comparision
+plot_event_times(primal_event_numbers, primal_window_times)
+plot_event_times(final_event_numbers, final_window_times)
+# %%

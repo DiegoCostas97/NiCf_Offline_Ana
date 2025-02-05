@@ -250,7 +250,7 @@ def read_and_filter(files, card_id_indices):
 
 #%%
 # Select the run number and file
-run = 514
+run = 515
 run_duration = 1920 # Run duration in seconds
 files = glob.glob(f"/eos/experiment/wcte/data/readout_commissioning/offline/dataR{run}S*P*.root")
 
@@ -278,16 +278,16 @@ print(f"We're keeping files {valid_indices}")
 selected_files = [files[i] for i in valid_indices]
 
 # Finally, valid_time_indices
-print("First Filter: Window Times...\n")
+print("First Filter: Window Times...")
 valid_time_indices = remove_bad_window_time(selected_files)
 
 # First filter of event_numbers and window_times
 event_numbers, window_times = filter_and_merge_windows(selected_files, valid_time_indices)
-print("Window Time Filter Applied!")
+print("Window Time Filter Applied!\n")
 
 # CARD_ID CUT
 # Second valid_indices, those for the card_id filter
-print("Second Filter: card_id...\n")
+print("Second Filter: card_id...")
 valid_card_id_indices = remove_bad_card_ids(selected_files, event_numbers)
 
 # Second and final filter for event_numbers and window_times, also get the rest of the variables already filtered

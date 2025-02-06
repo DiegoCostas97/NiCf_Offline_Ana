@@ -17,7 +17,7 @@ def open_pickle_file(file):
         return pickle.load(file)
 
 # %%
-def hits_heatmap(events, cards, file):
+def hits_heatmap(events, cards, bins, file):
     pdf = PdfPages(file+".pdf")
 
     for i in tqdm(range(len(events)), total=len(events), desc="Processing Files", colour="blue"):
@@ -29,15 +29,15 @@ def hits_heatmap(events, cards, file):
         zeros = ak.zeros_like(list_like_hit_mpmt_card_ids)
         new_matrix = events[i] + zeros
 
-        events   = ak.flatten(new_matrix).to_numpy()
+        current_events   = ak.flatten(new_matrix).to_numpy()
         card_ids = ak.flatten(list_like_hit_mpmt_card_ids).to_numpy()
 
-        if events.shape != card_ids.shape:
+        if current_events.shape != card_ids.shape:
             raise ValueError("events and card_ids matrices don't have same shape")
 
         fig, ax = plt.subplots(figsize=(20,12))
 
-        h = ax.hist2d(events, card_ids, bins=(1000,np.arange(133)-0.5), norm='log', cmap='turbo')
+        h = ax.hist2d(current_events, card_ids, bins=(1000,np.arange(bins)-0.5), norm='log', cmap='turbo')
 
         ax.set_xlabel("Event Number")
         ax.set_ylabel("Card Number")
@@ -56,5 +56,15 @@ def hits_heatmap(events, cards, file):
 final_event_numbers = open_pickle_file("data/final_event_numbers.pickle")
 final_hit_mpmt_card_id = open_pickle_file("data/final_hit_mpmt_card_id.pickle")
 
-hits_heatmap(final_event_numbers, final_hit_mpmt_card_id, "heatmap")
+hits_heatmap(final_event_numbers, final_hit_mpmt_card_id, 133, "card_ids_heatmap")
 # %%
+# Some other data quality check could be taking one mPMT and checking that every channel inside
+# it is getting the same amount of hits
+final_event_numbers = open_pickle_file("data/final_event_numbers.pickle")
+final_hit_pmt_channel = open_pickle_file("data/final_hit_pmt_channel.pickle")
+# %%
+hits_heatmap(final_event_numbers, final_hit_pmt_channel, 19, "channel_heatmap")
+# %%
+# The data is not very good and the problems seems to be somewhere in the aquisition,
+# but we can't do anything, so let's continue with the actual useful variables for
+# NiCf analysis.

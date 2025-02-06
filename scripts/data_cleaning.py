@@ -1,5 +1,6 @@
 # %%
 # # Some Imports
+import pickle
 import uproot 
 import matplotlib
 import collections
@@ -50,14 +51,14 @@ def remove_small_files(events, threshold=1000):
 
 # %%
 def plot_event_times(events, times):
-    for i, (e,t) in enumerate(zip(event_numbers, window_times)):
+    for i, (e,t) in enumerate(zip(events, times)):
         time_in_seconds = [i*1e-9 for i in t]
         
         plt.scatter(e, time_in_seconds, marker=".", label=f"Part {i}");
 
     plt.xlabel("Event Number")
     plt.ylabel("Window Times [s]")
-    plt.hlines(run_duration, 0, np.max(event_numbers[-1]))
+    plt.hlines(run_duration, 0, np.max(events[-1]))
     plt.text(0, run_duration+0.01*run_duration, "Run Duration [s]")
     plt.show()
 
@@ -221,13 +222,13 @@ def read_and_filter(files, card_id_indices):
         valid_card_id_indices_set = set(card_id_indices[i])
         
         # Filter valid events
-        filtered_events = [current_events[j] for j in range(len(current_events)) if j in card_id_indices]
-        filtered_times  = [current_times[j] for j in range(len(current_times)) if j in card_id_indices]
-        filtered_hit_mpmt_card_ids = [hit_mpmt_card_ids[j] for j in range(len(hit_mpmt_card_ids)) if j in card_id_indices]
-        # filtered_hit_mpmt_slot_ids = [hit_mpmt_slot_ids[j] for j in range(len(hit_mpmt_slot_ids)) if j in card_id_indices]
-        filtered_hit_pmt_channel_ids = [hit_pmt_channel_ids[j] for j in range(len(hit_pmt_channel_ids)) if j in card_id_indices]
-        # filtered_hit_pmt_charges     = [hit_pmt_charges[j] for j in range(len(hit_pmt_charges)) if j in card_id_indices]
-        filtered_hit_pmt_times       = [hit_pmt_times[j] for j in range(len(hit_pmt_times)) if j in card_id_indices]
+        filtered_events = [current_events[j] for j in range(len(current_events)) if j in valid_card_id_indices_set]
+        filtered_times  = [current_times[j] for j in range(len(current_times)) if j in valid_card_id_indices_set]
+        filtered_hit_mpmt_card_ids = [hit_mpmt_card_ids[j] for j in range(len(hit_mpmt_card_ids)) if j in valid_card_id_indices_set]
+        # filtered_hit_mpmt_slot_ids = [hit_mpmt_slot_ids[j] for j in range(len(hit_mpmt_slot_ids)) if j in valid_card_id_indices_set]
+        filtered_hit_pmt_channel_ids = [hit_pmt_channel_ids[j] for j in range(len(hit_pmt_channel_ids)) if j in valid_card_id_indices_set]
+        # filtered_hit_pmt_charges     = [hit_pmt_charges[j] for j in range(len(hit_pmt_charges)) if j in valid_card_id_indices_set]
+        filtered_hit_pmt_times       = [hit_pmt_times[j] for j in range(len(hit_pmt_times)) if j in valid_card_id_indices_set]
         # print(f"Number of valid events: {len(filtered_events)}")
         # print(f"Number of hit_mpmt entries: {len(filtered_hit_mpmt_card_ids)}\n")
         
@@ -250,7 +251,7 @@ def read_and_filter(files, card_id_indices):
 
 #%%
 # Select the run number and file
-run = 515
+run = 514
 run_duration = 1920 # Run duration in seconds
 files = glob.glob(f"/eos/experiment/wcte/data/readout_commissioning/offline/dataR{run}S*P*.root")
 
@@ -296,6 +297,16 @@ print("card_id Filter Applied!")
 
 # %%
 # Plot before and after filtering for comparision
-plot_event_times(primal_event_numbers, primal_window_times)
-plot_event_times(final_event_numbers, final_window_times)
+# plot_event_times(primal_event_numbers, primal_window_times)
+# plot_event_times(final_event_numbers, final_window_times)
 # %%
+
+# Open the file in binary mode
+def save_pickle(file, data):
+	with open(file, 'wb') as file:
+    		# Serialize and write the variable to the file
+    		pickle.dump(data, file)
+
+save_pickle("final_event_numbers.pickle", final_event_numbers)
+save_pickle("final_hit_mpmt_card_id.pickle", final_hit_mpmt_card_id)
+ 

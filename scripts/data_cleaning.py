@@ -251,7 +251,7 @@ def read_and_filter(files, card_id_indices):
 
 #%%
 # Select the run number and file
-run = 514
+run = 516
 run_duration = 1920 # Run duration in seconds
 files = glob.glob(f"/eos/experiment/wcte/data/readout_commissioning/offline/dataR{run}S*P*.root")
 
@@ -297,8 +297,8 @@ print("card_id Filter Applied!")
 
 # %%
 # Plot before and after filtering for comparision
-# plot_event_times(primal_event_numbers, primal_window_times)
-# plot_event_times(final_event_numbers, final_window_times)
+plot_event_times(primal_event_numbers, primal_window_times)
+plot_event_times(final_event_numbers, final_window_times)
 # %%
 
 # Open the file in binary mode
@@ -307,6 +307,10 @@ def save_pickle(file, data):
     		# Serialize and write the variable to the file
     		pickle.dump(data, file)
 
-save_pickle("final_event_numbers.pickle", final_event_numbers)
-save_pickle("final_hit_mpmt_card_id.pickle", final_hit_mpmt_card_id)
- 
+save_pickle(str(run)+"_final_window_times.pickle", final_window_times)
+save_pickle(str(run)+"_final_event_numbers.pickle", final_event_numbers)
+save_pickle(str(run)+"_final_hit_mpmt_card_id.pickle", final_hit_mpmt_card_id)
+save_pickle(str(run)+"_final_hit_pmt_channel.pickle", final_hit_pmt_channel)
+save_pickle(str(run)+"_final_hit_pmt_times.pickle", final_hit_pmt_times)
+
+# %%

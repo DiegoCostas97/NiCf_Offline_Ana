@@ -50,7 +50,7 @@ def remove_small_files(events, threshold=1000):
     return valid_indices
 
 # %%
-def plot_event_times(events, times):
+def plot_event_times(events, times, path, save=False):
     for i, (e,t) in enumerate(zip(events, times)):
         time_in_seconds = [i*1e-9 for i in t]
         
@@ -60,6 +60,8 @@ def plot_event_times(events, times):
     plt.ylabel("Window Times [s]")
     plt.hlines(run_duration, 0, np.max(events[-1]))
     plt.text(0, run_duration+0.01*run_duration, "Run Duration [s]")
+    if save:
+        plt.savefig("./figures/"+path)
     plt.show()
 
 # %%
@@ -251,9 +253,10 @@ def read_and_filter(files, card_id_indices):
 
 #%%
 # Select the run number and file
-run = 516
-run_duration = 1920 # Run duration in seconds
+run = 514
+run_duration = 32*60 # Run duration in seconds
 files = glob.glob(f"/eos/experiment/wcte/data/readout_commissioning/offline/dataR{run}S*P*.root")
+save_pickle_files = False
 
 # Sort the files using extract_p_number
 files = sorted(files, key=extract_p_number)
@@ -297,8 +300,8 @@ print("card_id Filter Applied!")
 
 # %%
 # Plot before and after filtering for comparision
-plot_event_times(primal_event_numbers, primal_window_times)
-plot_event_times(final_event_numbers, final_window_times)
+plot_event_times(primal_event_numbers, primal_window_times, "before_cleaning.png", save=True)
+plot_event_times(final_event_numbers, final_window_times, "after_cleaning.png", save=True)
 # %%
 
 # Open the file in binary mode
@@ -307,10 +310,11 @@ def save_pickle(file, data):
     		# Serialize and write the variable to the file
     		pickle.dump(data, file)
 
-save_pickle(str(run)+"_final_window_times.pickle", final_window_times)
-save_pickle(str(run)+"_final_event_numbers.pickle", final_event_numbers)
-save_pickle(str(run)+"_final_hit_mpmt_card_id.pickle", final_hit_mpmt_card_id)
-save_pickle(str(run)+"_final_hit_pmt_channel.pickle", final_hit_pmt_channel)
-save_pickle(str(run)+"_final_hit_pmt_times.pickle", final_hit_pmt_times)
+if save_pickle_files:
+    save_pickle("./data"+str(run)+"_final_window_times.pickle", final_window_times)
+    save_pickle("./data"+str(run)+"_final_event_numbers.pickle", final_event_numbers)
+    save_pickle("./data"+str(run)+"_final_hit_mpmt_card_id.pickle", final_hit_mpmt_card_id)
+    save_pickle("./data"+str(run)+"_final_hit_pmt_channel.pickle", final_hit_pmt_channel)
+    save_pickle("./data"+str(run)+"_final_hit_pmt_times.pickle", final_hit_pmt_times)
 
 # %%

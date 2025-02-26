@@ -59,10 +59,7 @@ for pmt in range(19):
         channel = channels[i]
 
         charge_from_card_100_channel_1 = [
-            chg[(c == 100) & (ch == pmt)] for c, ch, chg in tqdm(zip(card, channel, charge), 
-                                                            total=len(card), 
-                                                            colour="yellow", 
-                                                            leave=False)
+            chg[(c == 100) & (ch == pmt)] for c, ch, chg in zip(card, channel, charge)
         ]
 
         charge_from_card_100_channel_1 = ak.flatten(charge_from_card_100_channel_1)

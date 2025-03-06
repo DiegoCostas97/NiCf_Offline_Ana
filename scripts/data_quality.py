@@ -54,16 +54,17 @@ def hits_heatmap(events, cards, bins, file):
 
 # %%
 if __name__ == "__main__":
-    final_event_numbers = open_pickle_file("data/514_final_event_numbers.pickle")
-    final_hit_mpmt_card_id = open_pickle_file("data/514_final_hit_mpmt_card_id.pickle")
+    run = str(515)
+    final_event_numbers = open_pickle_file("data/"+run+"_final_event_numbers.pickle")
+    final_hit_mpmt_card_id = open_pickle_file("data/"+run+"_final_hit_mpmt_card_id.pickle")
 
-    hits_heatmap(final_event_numbers, final_hit_mpmt_card_id, 133, "514_card_ids_heatmap")
+    hits_heatmap(final_event_numbers, final_hit_mpmt_card_id, 133, run+"_card_ids_heatmap")
     # %%
     # Some other data quality check could be taking one mPMT and checking that every channel inside
     # it is getting the same amount of hits
-    final_hit_pmt_channel = open_pickle_file("data/514_final_hit_pmt_channel.pickle")
+    final_hit_pmt_channel = open_pickle_file("data/"+run+"_final_hit_pmt_channel.pickle")
     # %%
-    hits_heatmap(final_event_numbers, final_hit_pmt_channel, 19, "514_channel_heatmap")
+    hits_heatmap(final_event_numbers, final_hit_pmt_channel, 19, run+"channel_heatmap")
     # %%
     # The data is not very good and the problems seems to be somewhere in the aquisition,
     # but we can't do anything, so let's continue with the actual useful variables for

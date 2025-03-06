@@ -19,8 +19,7 @@ def open_pickle_file(file):
         return pickle.load(file)
 
 # %%
-run        = 514
-pdf_file = "figures/"+str(run)+"_card100.pdf"
+run = 516
 
 # %%
 charges  = open_pickle_file("data/"+str(run)+"_final_hit_pmt_charges.pickle")
@@ -49,10 +48,12 @@ channels = open_pickle_file("data/"+str(run)+"_final_hit_pmt_channel.pickle")
 # charge = np.array(charge, dtype=object)
 
 # %%
-pdf = PdfPages(pdf_file)
 
 for pmt in range(19):
+    print(f"Processing PMT {pmt}")
+    pickle_file = "figures/"+str(run)+f"/card100_pmt{pmt}.pkl"
     total_charge = []
+
     for i in tqdm(range(len(card_id)), total=len(card_id), colour="blue"):
         card    = card_id[i]
         charge  = charges[i]
@@ -73,8 +74,8 @@ for pmt in range(19):
     ax.hist(total_charge, bins=10000, histtype="step")
     ax.set_yscale('log')
     ax.set_xlabel(f"Charge - Card 100 - Channel {pmt}")
-    # ax.set_xlim(-150, 10000)
-    pdf.savefig(fig)
 
-pdf.close()
+    with open(pickle_file, "wb") as f:
+        pickle.dump(fig, f)
+
 # %%

@@ -50,7 +50,7 @@ def remove_small_files(events, threshold=1000):
     return valid_indices
 
 # %%
-def plot_event_times(events, times, path, save=False):
+def plot_event_times(events, times):
     for i, (e,t) in enumerate(zip(events, times)):
         time_in_seconds = [i*1e-9 for i in t]
         
@@ -60,8 +60,6 @@ def plot_event_times(events, times, path, save=False):
     plt.ylabel("Window Times [s]")
     plt.hlines(run_duration, 0, np.max(events[-1]))
     plt.text(0, run_duration+0.01*run_duration, "Run Duration [s]")
-    if save:
-        plt.savefig("./figures/"+path)
     plt.show()
 
 # %%
@@ -203,9 +201,9 @@ def read_and_filter(files, card_id_indices):
     final_event_numbers       = []
     final_window_times        = []
     final_hit_mpmt_card_id    = []
-    final_hit_mpmt_slot_ids   = []
+    # final_hit_mpmt_slot_ids   = []
     final_hit_pmt_channel_ids = []
-    final_hit_pmt_charges     = []
+    # final_hit_pmt_charges     = []
     final_hit_pmt_times       = []
 
     for i,f in tqdm(enumerate(files), total=len(files), desc="Processing Files"):
@@ -214,9 +212,9 @@ def read_and_filter(files, card_id_indices):
         current_times       = window_times[i]
         tree                = uproot.open(f+":WCTEReadoutWindows")
         hit_mpmt_card_ids   = tree["hit_mpmt_card_ids"].array()
-        hit_mpmt_slot_ids   = tree["hit_mpmt_slot_ids"].array()
+        # hit_mpmt_slot_ids   = tree["hit_mpmt_slot_ids"].array()
         hit_pmt_channel_ids = tree["hit_pmt_channel_ids"].array()
-        hit_pmt_charges     = tree["hit_pmt_charges"].array()
+        # hit_pmt_charges     = tree["hit_pmt_charges"].array()
         hit_pmt_times       = tree['hit_pmt_times'].array()
         # print(f"Number of current events: {len(current_events)}")
         
@@ -227,9 +225,9 @@ def read_and_filter(files, card_id_indices):
         filtered_events = [current_events[j] for j in range(len(current_events)) if j in valid_card_id_indices_set]
         filtered_times  = [current_times[j] for j in range(len(current_times)) if j in valid_card_id_indices_set]
         filtered_hit_mpmt_card_ids = [hit_mpmt_card_ids[j] for j in range(len(hit_mpmt_card_ids)) if j in valid_card_id_indices_set]
-        filtered_hit_mpmt_slot_ids = [hit_mpmt_slot_ids[j] for j in range(len(hit_mpmt_slot_ids)) if j in valid_card_id_indices_set]
+        # filtered_hit_mpmt_slot_ids = [hit_mpmt_slot_ids[j] for j in range(len(hit_mpmt_slot_ids)) if j in valid_card_id_indices_set]
         filtered_hit_pmt_channel_ids = [hit_pmt_channel_ids[j] for j in range(len(hit_pmt_channel_ids)) if j in valid_card_id_indices_set]
-        filtered_hit_pmt_charges     = [hit_pmt_charges[j] for j in range(len(hit_pmt_charges)) if j in valid_card_id_indices_set]
+        # filtered_hit_pmt_charges     = [hit_pmt_charges[j] for j in range(len(hit_pmt_charges)) if j in valid_card_id_indices_set]
         filtered_hit_pmt_times       = [hit_pmt_times[j] for j in range(len(hit_pmt_times)) if j in valid_card_id_indices_set]
         # print(f"Number of valid events: {len(filtered_events)}")
         # print(f"Number of hit_mpmt entries: {len(filtered_hit_mpmt_card_ids)}\n")
@@ -238,9 +236,9 @@ def read_and_filter(files, card_id_indices):
         final_event_numbers.append(filtered_events)
         final_window_times.append(filtered_times)
         final_hit_mpmt_card_id.append(filtered_hit_mpmt_card_ids)   
-        final_hit_mpmt_slot_ids.append(filtered_hit_mpmt_slot_ids) 
+        # final_hit_mpmt_slot_ids.append(filtered_hit_mpmt_slot_ids) 
         final_hit_pmt_channel_ids.append(filtered_hit_pmt_channel_ids) 
-        final_hit_pmt_charges.append(filtered_hit_pmt_charges)     
+        # final_hit_pmt_charges.append(filtered_hit_pmt_charges)     
         final_hit_pmt_times.append(filtered_hit_pmt_times)
 
     if len(files) == len(final_event_numbers) == len(final_window_times):
@@ -249,14 +247,13 @@ def read_and_filter(files, card_id_indices):
     else:
         raise ValueError(f"You're processing {len(files)} files, but your final_event_numbers is {len(final_event_numbers)} items long")
 
-    return final_event_numbers, final_window_times, final_hit_mpmt_card_id, final_hit_mpmt_slot_ids, final_hit_pmt_charges, final_hit_pmt_channel_ids, final_hit_pmt_times
+    return final_event_numbers, final_window_times, final_hit_mpmt_card_id, final_hit_pmt_channel_ids, final_hit_pmt_times
 
 #%%
 # Select the run number and file
-run = 514
-run_duration = 32*60 # Run duration in seconds
+run = 515
+run_duration = 1920 # Run duration in seconds
 files = glob.glob(f"/eos/experiment/wcte/data/readout_commissioning/offline/dataR{run}S*P*.root")
-save_pickle_files = True
 
 # Sort the files using extract_p_number
 files = sorted(files, key=extract_p_number)
@@ -295,13 +292,13 @@ print("Second Filter: card_id...")
 valid_card_id_indices = remove_bad_card_ids(selected_files, event_numbers)
 
 # Second and final filter for event_numbers and window_times, also get the rest of the variables already filtered
-final_event_numbers, final_window_times, final_hit_mpmt_card_id, final_hit_mpmt_slot_ids, final_hit_pmt_charges, final_hit_pmt_channel_ids, final_hit_pmt_times = read_and_filter(selected_files, valid_card_id_indices)
+final_event_numbers, final_window_times, final_hit_mpmt_card_id, final_hit_pmt_channel, final_hit_pmt_times = read_and_filter(selected_files, valid_card_id_indices)
 print("card_id Filter Applied!")
 
 # %%
 # Plot before and after filtering for comparision
-plot_event_times(primal_event_numbers, primal_window_times, "before_cleaning.png", save=True)
-plot_event_times(final_event_numbers, final_window_times, "after_cleaning.png", save=True)
+plot_event_times(primal_event_numbers, primal_window_times)
+plot_event_times(final_event_numbers, final_window_times)
 # %%
 
 # Open the file in binary mode
@@ -310,13 +307,10 @@ def save_pickle(file, data):
     		# Serialize and write the variable to the file
     		pickle.dump(data, file)
 
-if save_pickle_files:
-    save_pickle("./data/"+str(run)+"_final_window_times.pickle", final_window_times)
-    save_pickle("./data/"+str(run)+"_final_event_numbers.pickle", final_event_numbers)
-    save_pickle("./data/"+str(run)+"_final_hit_mpmt_slot_ids.pickle", final_hit_mpmt_slot_ids)
-    save_pickle("./data/"+str(run)+"_final_hit_pmt_charges.pickle", final_hit_pmt_charges)
-    save_pickle("./data/"+str(run)+"_final_hit_mpmt_card_id.pickle", final_hit_mpmt_card_id)
-    save_pickle("./data/"+str(run)+"_final_hit_pmt_channel.pickle", final_hit_pmt_channel_ids)
-    save_pickle("./data/"+str(run)+"_final_hit_pmt_times.pickle", final_hit_pmt_times)
+save_pickle("515_final_hit_mpmt_card_id.pickle", final_hit_mpmt_card_id)
+save_pickle("515_final_event_numbers.pickle", final_event_numbers)
+save_pickle("515_final_hit_pmt_channel.pickle", final_hit_pmt_channel)
+save_pickle("515_final_window_times.pickle", final_window_times)
+save_pickle("515_final_hit_pmt_times.pickle", final_hit_pmt_times)
 
 # %%

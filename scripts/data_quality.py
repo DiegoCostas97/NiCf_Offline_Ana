@@ -53,17 +53,18 @@ def hits_heatmap(events, cards, bins, file):
 # moment for showing this data is not super good.
 
 # %%
-final_event_numbers = open_pickle_file("scripts/data/bkg_final_event_numbers.pickle")
-final_hit_mpmt_card_id = open_pickle_file("scripts/data/bkg_final_hit_mpmt_card_id.pickle")
+if __name__ == "__main__":
+    final_event_numbers = open_pickle_file("data/514_final_event_numbers.pickle")
+    final_hit_mpmt_card_id = open_pickle_file("data/514_final_hit_mpmt_card_id.pickle")
 
-hits_heatmap(final_event_numbers, final_hit_mpmt_card_id, 133, "card_ids_heatmap")
-# %%
-# Some other data quality check could be taking one mPMT and checking that every channel inside
-# it is getting the same amount of hits
-final_hit_pmt_channel = open_pickle_file("scripts/data/bkg_final_hit_pmt_channel.pickle")
-# %%
-hits_heatmap(final_event_numbers, final_hit_pmt_channel, 19, "channel_heatmap")
-# %%
-# The data is not very good and the problems seems to be somewhere in the aquisition,
-# but we can't do anything, so let's continue with the actual useful variables for
-# NiCf analysis.
+    hits_heatmap(final_event_numbers, final_hit_mpmt_card_id, 133, "514_card_ids_heatmap")
+    # %%
+    # Some other data quality check could be taking one mPMT and checking that every channel inside
+    # it is getting the same amount of hits
+    final_hit_pmt_channel = open_pickle_file("data/514_final_hit_pmt_channel.pickle")
+    # %%
+    hits_heatmap(final_event_numbers, final_hit_pmt_channel, 19, "514_channel_heatmap")
+    # %%
+    # The data is not very good and the problems seems to be somewhere in the aquisition,
+    # but we can't do anything, so let's continue with the actual useful variables for
+    # NiCf analysis.
